@@ -27,8 +27,8 @@ public class Main {
                     "\nadd cus   - Add a new customer" +
                     "\nadd res   - Add a new restaurant");
 
-            Scanner scanner = new Scanner(System.in);
-            String input = scanner.nextLine();
+            Scanner scan = new Scanner(System.in);
+            String input = scan.nextLine();
 
             // Switch statement which reacts to the user's input and calls the related functions
             switch (input) {
@@ -45,7 +45,7 @@ public class Main {
                     // Loop that keeps asking the user for a valid input until given, or forced to exit
                     while (true) {
                         System.out.print("\nPlease enter the customer's email: ");
-                        email = scanner.nextLine();
+                        email = scan.nextLine();
 
                         // Condition that checks if the entered email is a valid format and alerts if it is not
                         if (isValidEmailAddress(email)) {
@@ -75,7 +75,7 @@ public class Main {
     // Functions
     // Function used to add a new order
     public static void addOrder() {
-        Scanner scanner = new Scanner(System.in);
+        Scanner scan = new Scanner(System.in);
 
         // Order number section
         String newOrderNumber;
@@ -83,7 +83,7 @@ public class Main {
         // Loop that continuously asks the user for a valid order number until given, or forced to exit
         while (true) {
             System.out.print("\nPlease enter the new order number (leave empty to exit): ");
-            newOrderNumber = scanner.nextLine();
+            newOrderNumber = scan.nextLine();
 
             // Condition that exits the function if the user leaves the order number input empty
             if (newOrderNumber.equals("")) {
@@ -109,7 +109,7 @@ public class Main {
         // Loop that continuously asks the user for a valid email until given
         while (true) {
             System.out.print("\nPlease enter the customer's email: ");
-            customerEmail = scanner.nextLine();
+            customerEmail = scan.nextLine();
 
             // Condition that checks if the entered email is a valid format and alerts if it is not
             if (isValidEmailAddress(customerEmail)) {
@@ -142,7 +142,7 @@ public class Main {
         // Loop that continuously asks the user for a valid name until given
         while (true) {
             System.out.print("\nPlease enter the restaurant name: ");
-            restaurant = scanner.nextLine();
+            restaurant = scan.nextLine();
 
             // Condition that checks if the restaurant is on the database and alerts if it isn't
             if (checkRestaurantDatabase(restaurant)) {
@@ -167,7 +167,7 @@ public class Main {
             System.out.print("\nDo you wish to add a item to the order list? " +
                     "\ny - yes" +
                     "\nn - no\n");
-            String orderControl = scanner.nextLine();
+            String orderControl = scan.nextLine();
 
             // Switch statement that performs tasks according to the user's decision
             switch (orderControl) {
@@ -198,7 +198,7 @@ public class Main {
 
         // Customer request section - If left empty, it will automatically set it as "None"
         System.out.print("\nPlease enter the customer's special request (if none, leave blank): ");
-        String request = scanner.nextLine();
+        String request = scan.nextLine();
 
         // Condition if the request space is left open/ blank
         if (request.equals("") || request == null) {
@@ -213,7 +213,7 @@ public class Main {
 
     // Function that adds a new customer to the customer database
     public static void addCustomer(String email) {
-        Scanner scanner = new Scanner(System.in);
+        Scanner scan = new Scanner(System.in);
 
         // Name section
         String name;
@@ -221,7 +221,7 @@ public class Main {
         // Loop that continues to ask for a valid name until given
         while (true) {
             System.out.print("\nPlease enter the customer's name: ");
-            name = scanner.nextLine();
+            name = scan.nextLine();
 
             // Condition that checks if the name is not an empty space
             if (!name.equals("")) {
@@ -236,7 +236,7 @@ public class Main {
         // Loop that continues to ask for a valid number until given
         while (true) {
             System.out.print("\nPlease enter the customer's contact number: ");
-            contactNumber = scanner.nextLine();
+            contactNumber = scan.nextLine();
 
             // Condition that checks if the input is numbers only by calling the "checkNumbersOnly" function
             if (checkNumbersOnly(contactNumber)) {
@@ -252,7 +252,7 @@ public class Main {
         // Loop that keeps asking the user for a valid address until given
         while (true) {
             System.out.print("\nPlease enter the customer's address (123 Street name - District): ");
-            address = scanner.nextLine();
+            address = scan.nextLine();
 
             // Condition that checks if the entered address is a valid format
             if (isValidAddress(address)) {
@@ -268,7 +268,7 @@ public class Main {
         // Loop that keeps asking the user for a valid city until given
         while (true) {
             System.out.print("\nPlease enter the customer's city: ");
-            city = scanner.nextLine();
+            city = scan.nextLine();
 
             // Condition that checks if the city is not an empty space
             if (!city.equals("")) {
@@ -286,7 +286,7 @@ public class Main {
 
     // Function that adds a new restaurant to the restaurant database
     public static void addRestaurant() {
-        Scanner scanner = new Scanner(System.in);
+        Scanner scan = new Scanner(System.in);
 
         // Name section
         String name;
@@ -294,7 +294,7 @@ public class Main {
         // Loop that continuously asks the user for a valid name until given
         while (true) {
             System.out.print("\nPlease enter the restaurant's name: ");
-            name = scanner.nextLine();
+            name = scan.nextLine();
 
             // Condition that checks if the city is not an empty space
             if (!name.equals("")) {
@@ -312,7 +312,7 @@ public class Main {
             System.out.print("\nDo you wish to add a branch?" +
                     "\ny - yes" +
                     "\nn - no\n");
-            String input = scanner.nextLine();
+            String input = scan.nextLine();
 
             // Switch statement that performs tasks according to the user's decision
             switch (input) {
@@ -325,7 +325,7 @@ public class Main {
                     // Loop that continuously asks for a branch name until a valid input is given - alerts if invalid
                     while (addBranch) {
                         System.out.print("\nPlease enter a branch location: ");
-                        branchName = scanner.nextLine();
+                        branchName = scan.nextLine();
 
                         // Condition that checks of the branch name isn't a blank input
                         if (!branchName.equals("")) {
@@ -333,7 +333,7 @@ public class Main {
                             // Loop that continuously asks for the branch's number - alerts if invalid
                             while (true) {
                                 System.out.print("\nPlease enter the branch's contact number: ");
-                                branchNumber = scanner.nextLine();
+                                branchNumber = scan.nextLine();
 
                                 // Condition that checks if the number given is a valid input
                                 if (checkNumbersOnly(branchNumber)) {
@@ -375,7 +375,7 @@ public class Main {
             System.out.println("\nDo you wish to add a item?" +
                     "\ny - yes" +
                     "\nn - no");
-            String input = scanner.nextLine();
+            String input = scan.nextLine();
 
             // Switch statement that performs tasks according to the user's decision
             switch (input) {
@@ -390,7 +390,7 @@ public class Main {
                         double itemPrice;
 
                         System.out.print("\nPlease enter the item name: ");
-                        itemName = scanner.nextLine();
+                        itemName = scan.nextLine();
 
                         // Condition that checks if the item name isn't blank, otherwise alerts the user
                         if (!itemName.equals("")) {
@@ -398,7 +398,7 @@ public class Main {
                             // Loop that continuously asks for a valid item price
                             while (true) {
                                 System.out.print("\nPlease enter the item's price: ");
-                                sItemPrice = scanner.nextLine();
+                                sItemPrice = scan.nextLine();
 
                                 // Condition that checks validity of the item price and adds it to the menu array, otherwise alerts the user
                                 if (checkNumbersOnly(sItemPrice)) {
@@ -441,13 +441,13 @@ public class Main {
     // Function used to add items to an order list
     public static void addOrderItem(Order order) {
 
-        Scanner scanner = new Scanner(System.in);
+        Scanner scan = new Scanner(System.in);
         String itemName;
 
         // Loop that continuously asks for an valid item name until given
         while (true) {
             System.out.print("Please enter the item name: ");
-            itemName = scanner.nextLine();
+            itemName = scan.nextLine();
 
             // Condition that checks if the item name isn't a blank input
             if (!itemName.equals("")) {
@@ -486,7 +486,7 @@ public class Main {
             // Loop that continuously asks for a valid quantity of the specified item
             while (true) {
                 System.out.print("Enter the desired quantity of the item: ");
-                input = scanner.nextLine();
+                input = scan.nextLine();
 
                 // Condition that checks if the quantity isn't a blank field - alerts if not valid
                 if (!input.equals("")) {
@@ -641,11 +641,11 @@ public class Main {
         // Condition that tries to read from the "customers.txt" file with a File and Scanner object
         try {
             File f = new File("customers.txt");
-            Scanner scanner = new Scanner(f);
+            Scanner scan = new Scanner(f);
 
             // Loop that checks if the text file has more content to read and adds them to the lines array if so
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
+            while (scan.hasNextLine()) {
+                String line = scan.nextLine();
                 String[] lineParts = line.split(", ", 6);
 
                 String name = lineParts[0]; // Extracts name
@@ -682,7 +682,7 @@ public class Main {
         // Condition that tries to read from the "restaurant.txt" file with a File and Scanner object
         try {
             File f = new File("restaurants.txt");
-            Scanner scanner = new Scanner(f);
+            Scanner scan = new Scanner(f);
 
             int lineCounter = 0; // Counter that controls how the different lines are handled
             String name = "";
@@ -690,9 +690,9 @@ public class Main {
             ArrayList<Item> menu = new ArrayList<>();
 
             // Loop that checks if the text file has more content to read and adds them to the lines array if so
-            while (scanner.hasNextLine()) {
+            while (scan.hasNextLine()) {
 
-                String line = scanner.nextLine();
+                String line = scan.nextLine();
 
                 // Condition if the line is a name of a restaurant
                 if (lineCounter == 0) {
@@ -756,11 +756,11 @@ public class Main {
         // Condition that tries to read from the driver-info.txt file with a File and Scanner object
         try {
             File f = new File("driver-info.txt");
-            Scanner scanner = new Scanner(f);
+            Scanner scan = new Scanner(f);
 
             // Loop that checks if the text file has more content to read and adds them to the lines array if so
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
+            while (scan.hasNextLine()) {
+                String line = scan.nextLine();
                 String[] lineParts = line.split(", ");
 
                 String name = lineParts[0]; // Extracts driver name
@@ -784,11 +784,11 @@ public class Main {
         // Condition that tries to read from the orders.txt file with a File and Scanner object
         try {
             File f = new File("orders.txt");
-            Scanner scanner = new Scanner(f);
+            Scanner scan = new Scanner(f);
 
             // Loop that checks if the text file has more content to read and adds them to the lines array if so
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
+            while (scan.hasNextLine()) {
+                String line = scan.nextLine();
                 String[] lineParts = line.split(", ", 7);
 
                 String orderNumber = lineParts[0]; // Extracts order number
