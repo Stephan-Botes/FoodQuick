@@ -551,7 +551,7 @@ public class Main {
             }
         }
 
-        writeToFile("driver-info.txt", driverList); // Updates the driver.txt file with the incremented load
+        writeToFile("driver-info.txt", driverList); // Updates the driver-info.txt file with the incremented load
         order.setDriver(driverName); // Sets the driver name of the order
     }
 
