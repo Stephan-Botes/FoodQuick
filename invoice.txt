@@ -1,0 +1,22 @@
+Order number: 4206988
+Customer: Pieter Jabzter
+Email: pietiejabz@heehee.co.za
+Phone number: 0897655987
+Location: Cape Town
+
+You have ordered the following from Steers in Cape Town:
+
+2 x Prince Burger (R79.99)
+1 x Sprite (R20.50)
+2 x Fries (R19.95)
+
+Special instructions: Make the fries as crusty as possible!
+
+Total: R220.38
+
+Miranda Metcalfe is nearest to the restaurant and so he/ she will be delivering your order to you at:
+
+69 Where am I street
+Revonia
+
+If you need to contact the restaurant, their number is 0218493145.

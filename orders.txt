@@ -1,0 +1,8 @@
+12345678, steph@gg.ez, Spike Fenton, Steers, Johannesburg, None, [King Burger, 90.0, 2, Pepsi, 23.0, 2, Fries, 20.0, 1]
+9764281, cmounton@gmail.com, Victor Orozco, Roman's Pizza, Potchefstroom, None, [Tangy Russian Pizza, 95.0, 5]
+24562415, cyril@pascoe.net, Johan Hoffman, KFC, Springbok, Steal an extra chicken wing please., [8 Piece Family Meal, 200.0, 2]
+5546321, jacques.kloeg@artiflex.co.za, Eugene Santana, Nando's, Durban, Leave in the box at the gate., [1/4 Chicken Meal, 79.9, 1, Smoothie, 17.5, 1, Coleslaw, 29.9, 2]
+1111111, steph@gg.ez, Spike Fenton, McDonald's, Johannesburg, None, [McChicken Meal, 57.9, 1]
+987654321, jannesva@yahoo.com, Miranda Metcalfe, McDonald's, Cape Town, As much ice as possible!, [Slurpie, 20.5, 1]
+29879871, dbot1@hypermail.org, Kailan Snow, Debonairs Pizza, Bloemfontein, Bake them real good!, [Bacon and Feta Pizza, 89.9, 1, Ice Tea, 20.5, 1, Pizza Pie, 33.95, 1]
+4206988, pietiejabz@heehee.co.za, Miranda Metcalfe, Steers, Cape Town, Make the fries as crusty as possible!, [Prince Burger, 79.99, 2, Sprite, 20.5, 1, Fries, 19.95, 2]

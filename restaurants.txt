@@ -1,0 +1,24 @@
+Roman's Pizza
+{Durban=0316725498, Potchefstroom=0182933710, Springbok=0277121890, Witbank=0135906565, Cape Town=0215518680, Johannesburg=0118339321, Bloemfontein=0514300132, Port Elizabeth=0413687296}
+[Hawaiian Pizza, 69.95, 1, Sweet Chilli Chicken Pizza, 99.99, 1, Tangy Russian Pizza, 95.9, 1, Coke, 21.5, 1, Sprite, 20.5, 1, Fanta, 19.5, 1]
+
+Steers
+{Durban=0313216548, Potchefstroom=0189431657, Springbok=0272245446, Witbank=0134685732, Cape Town=0218493145, Johannesburg=0119461375, Bloemfontein=0519975346, Port Elizabeth=0414567893}
+[King Burger, 89.9, 1, Cheese Burger, 59.95, 1, Prince Burger, 79.99, 1, Fries, 19.95, 1, Coke, 21.5, 1, Sprite, 20.5, 1, Pepsi, 22.5, 1]
+
+KFC
+{Durban=0311597534, Potchefstroom=0188523694, Springbok=0279765184, Witbank=0133352624, Cape Town=0210375934, Johannesburg=0115287419, Bloemfontein=0519764385, Port Elizabeth=0413216547}
+[Streetwise 2, 29.95, 1, 21 Piece Bucket, 274.9, 1, 8 Piece Family Meal, 199.99, 1, Fries, 23.5, 1, Coke, 22.5, 1, Fanta, 21.5, 1, Creme Soda, 21.5, 1]
+
+Nando's
+{Durban=0319514568, Potchefstroom=0181478963, Springbok=0273573684, Witbank=0132425273, Cape Town=0211253856, Johannesburg=0111236548, Bloemfontein=0511477852, Port Elizabeth=0411598524}
+[1/4 Chicken Meal, 79.9, 1, Boujee Bowl, 61.95, 1, Chicken Strips, 54.99, 1, Coleslaw, 29.9, 1, Soft Drink, 19.5, 1, Juice, 16.5, 1, Smoothie, 17.5, 1]
+
+McDonald's
+{Durban=0311478253, Potchefstroom=0184679132, Springbok=0271591473, Witbank=0131646786, Cape Town=0219845713, Johannesburg=0119845327, Bloemfontein=0512258834, Port Elizabeth=0413468752}
+[McChicken Meal, 57.9, 1, Colonel Burger, 75.99, 1, Chicken Wrap, 44.99, 1, Fries, 21.95, 1, Mountain Dew, 23.5, 1, Milkshake, 18.5, 1, Slurpie, 20.5, 1]
+
+Debonairs Pizza
+{Durban=0316875492, Potchefstroom=0189746315, Springbok=0271231647, Witbank=0139865324, Cape Town=0212266345, Johannesburg=0117436951, Bloemfontein=0519788653, Port Elizabeth=0414679315}
+[3 Cheeses Pizza, 84.99, 1, Meaty Feast Pizza, 92.99, 1, Bacon and Feta Pizza, 89.9, 1, Pizza Pie, 33.95, 1, Coke, 22.5, 1, Ice Tea, 20.5, 1, Juice, 16.5, 1]
+
