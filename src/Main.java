@@ -551,7 +551,7 @@ public class Main {
             }
         }
 
-        writeToFile("drivers.txt", driverList); // Updates the driver.txt file with the incremented load
+        writeToFile("driver-info.txt", driverList); // Updates the driver.txt file with the incremented load
         order.setDriver(driverName); // Sets the driver name of the order
     }
 
@@ -753,9 +753,9 @@ public class Main {
 
     // Function used to read from the drivers file and populate the arraylist with that information
     public static void readFromDriverFile() {
-        // Condition that tries to read from the drivers.txt file with a File and Scanner object
+        // Condition that tries to read from the driver-info.txt file with a File and Scanner object
         try {
-            File f = new File("drivers.txt");
+            File f = new File("driver-info.txt");
             Scanner scanner = new Scanner(f);
 
             // Loop that checks if the text file has more content to read and adds them to the lines array if so
