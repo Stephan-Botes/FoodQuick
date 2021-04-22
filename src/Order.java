@@ -1,63 +1,64 @@
-import java.util.ArrayList;
-
 public class Order {
 
-    private String orderNumber;
-    private String customerEmail;
-    private String driver;
-    private String restaurant;
-    private String city;
+    private int id;
+    private int orderNumber;
+    private int customerID;
+    private int driverID;
+    private int restaurantID;
     private String specialRequest;
-    private ArrayList<Item> orderItems;
+    private String status;
 
-    public Order (String orderNumber, String customerEmail, String restaurant, String city) {
+    public Order (int orderNumber, int customerID, int driverID, int restaurantID) {
         this.orderNumber = orderNumber;
-        this.customerEmail = customerEmail;
-        this.restaurant = restaurant;
-        this.city = city;
-        this.orderItems = new ArrayList<>();
+        this.customerID = customerID;
+        this.driverID = driverID;
+        this.restaurantID = restaurantID;
     }
 
-    public String getOrderNumber() {
+    public Order (int id, int orderNumber, int customerID, int driverID, int restaurantID, String specialRequest, String status) {
+        this.id = id;
+        this.orderNumber = orderNumber;
+        this.customerID = customerID;
+        this.driverID = driverID;
+        this.restaurantID = restaurantID;
+        this.specialRequest = specialRequest;
+        this.status = status;
+    }
+
+    public int getId()  {
+        return this.id;
+    }
+
+    public int getOrderNumber() {
         return this.orderNumber;
     }
 
-    public String getCustomerEmail() {
-        return this.customerEmail;
+    public int getCustomerID() {
+        return this.customerID;
     }
 
-    public String getRestaurant() {
-        return this.restaurant;
+    public int getDriverID() {
+        return this.driverID;
     }
 
-    public String getCity() {
-        return this.city;
+    public int getRestaurantID() {
+        return this.restaurantID;
     }
 
     public String getSpecialRequest() {
         return this.specialRequest;
     }
 
-    public String getDriver() {
-        return this.driver;
-    }
-
-    public ArrayList<Item> getOrderItems() {
-        return this.orderItems;
-    }
-
-    public void setDriver(String driver) {
-        this.driver = driver; }
-
-    public void addOrderItem(Item item) {
-        this.orderItems.add(item);
-    }
-
-    public void setSpecialRequest(String request) {
-        this.specialRequest = request;
+    public String getStatus() {
+        return this.status;
     }
 
     public String toString() {
-        return (orderNumber + ", " + customerEmail + ", " + driver + ", " + restaurant + ", " + city + ", " + specialRequest + ", " + orderItems);
+        return ("order number     : " + orderNumber +
+                "\ncustomer ID    : " + customerID +
+                "\ndriver ID      : " + driverID +
+                "\nrestaurant ID  : " + restaurantID +
+                "\nspecial request: " + specialRequest +
+                "\nstatus         : " + status);
     }
 }

@@ -1,89 +1,95 @@
 import java.io.File;
+import java.sql.*;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Main {
+public class
 
-    // Initialize array lists used across the program for customers, restaurants, drivers and orders
-    private static final ArrayList<Customer> customerList = new ArrayList<>();
-    private static final ArrayList<Restaurant> restaurantList = new ArrayList<>();
-    private static final ArrayList<FoodDriver> driverList = new ArrayList<>();
-    private static final ArrayList<Order> orderList = new ArrayList<>();
+Main {
 
     public static void main(String[] args) {
 
-        // Load database/ information from text files and populate ArrayLists on startup
-        readFromCustomerFile();
-        readFromRestaurantFile();
-        readFromDriverFile();
-        readFromOrderFile();
+        // Initial database connection component setup
+        try {
+            Connection connection = DriverManager.getConnection(
+                    "jdbc:sqlserver://localhost;databaseName=QuickFoodMS",
+                    "stephan",
+                    "pass123"
+            );
 
-        // Main menu
-        while (true) {
-            System.out.println("\nPlease choose an option: " +
-                    "\nadd order - Add a new order" +
-                    "\nadd cus   - Add a new customer" +
-                    "\nadd res   - Add a new restaurant");
+            // Main menu
+            while (true) {
+                System.out.println("\nPlease choose an option: " +
+                        "\n1 - Add a new order" +
+                        "\n2 - Find incomplete orders" +
+                        "\n3 - Add a new customer" +
+                        "\n4 - Find customer" +
+                        "\n5 - Edit customer information" +
+                        "\n6 - Prints an invoice and finalizes an order");
 
-            Scanner scan = new Scanner(System.in);
-            String input = scan.nextLine();
+                Scanner scanner = new Scanner(System.in);
+                String input = scanner.nextLine();
 
-            // Switch statement which reacts to the user's input and calls the related functions
-            switch (input) {
+                // Switch statement which reacts to the user's input and calls the related functions
+                switch (input) {
 
-                // Case if the user wishes to add a new order
-                case "add order":
-                    addOrder();
-                    break;
+                    // Case if the user wishes to add a new order
+                    case "1":
+                        createOrder(connection);
+                        break;
 
-                // Case if the user wishes to add a new customer
-                case "add cus":
-                    String email;
+                    // Case if the user wishes to find incomplete orders
+                    case "2":
+                        findIncompleteOrders(connection);
+                        break;
 
-                    // Loop that keeps asking the user for a valid input until given, or forced to exit
-                    while (true) {
-                        System.out.print("\nPlease enter the customer's email: ");
-                        email = scan.nextLine();
+                    // Case if user wants to add a customer
+                    case "3":
+                        addCustomer(connection);
+                        break;
 
-                        // Condition that checks if the entered email is a valid format and alerts if it is not
-                        if (isValidEmailAddress(email)) {
-                            break;
-                        } else {
-                            System.out.print("Please enter a valid email address.");
-                        }
-                    }
+                    // Case if the user wishes to find a customer
+                    case "4":
+                        findCustomer(connection);
+                        break;
 
-                    // Adds the new customer with the given email
-                    addCustomer(email);
-                    break;
+                    // Case if the user wishes to edit a customer
+                    case "5":
+                        editCustomer(connection);
+                        break;
 
-                // Case if user wants to add a restaurant
-                case "add res":
-                    addRestaurant();
-                    break;
+                    // Case if the user wishes to finalise an order
+                    case "6":
+                        finaliseOrder(connection);
+                        break;
 
-                // Default case if user enters an invalid input
-                default:
-                    System.out.println("Please enter a valid input");
-                    break;
+                    // Default case if user enters an invalid input
+                    default:
+                        System.out.println("Please enter a valid input.");
+                        break;
+                }
             }
+        } // Exception if a database connection cannot be made
+        catch (SQLException e) {
+            System.out.println("An error occurred when connecting to the database! Details: ");
+            e.printStackTrace();
         }
     }
 
     // Functions
-    // Function used to add a new order
-    public static void addOrder() {
-        Scanner scan = new Scanner(System.in);
-
+    // Functions called by the main menu
+    // Function used to create a new order
+    public static void createOrder(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
         // Order number section
         String newOrderNumber;
 
         // Loop that continuously asks the user for a valid order number until given, or forced to exit
         while (true) {
             System.out.print("\nPlease enter the new order number (leave empty to exit): ");
-            newOrderNumber = scan.nextLine();
+            newOrderNumber = scanner.nextLine();
 
             // Condition that exits the function if the user leaves the order number input empty
             if (newOrderNumber.equals("")) {
@@ -93,10 +99,11 @@ public class Main {
             // Section that checks the validity of the order number
             if (checkNumbersOnly(newOrderNumber)) {
                 // Condition that checks and alerts the user if the number is already in the database
-                if (checkOrderNumberDatabase(newOrderNumber)) {
-                    break;
-                } else {
+                int iNewOrderNumber = Integer.parseInt(newOrderNumber);
+                if (checkOrderNumberDatabase(connection, iNewOrderNumber)) {
                     System.out.print("Order number already exists.");
+                } else {
+                    break;
                 }
             } else {
                 System.out.print("Please enter a valid order number.");
@@ -109,7 +116,7 @@ public class Main {
         // Loop that continuously asks the user for a valid email until given
         while (true) {
             System.out.print("\nPlease enter the customer's email: ");
-            customerEmail = scan.nextLine();
+            customerEmail = scanner.nextLine();
 
             // Condition that checks if the entered email is a valid format and alerts if it is not
             if (isValidEmailAddress(customerEmail)) {
@@ -120,21 +127,12 @@ public class Main {
         }
 
         // Condition that checks if the user email is already in the customers database
-        // If the customer exists - adds the new order number to the existing customer's name
-        // If customer doesn't exist - creates the customer first, then adds the order number
-        // Saves to the customer.txt file
-        if (checkCustomerExists(customerEmail)) {
-            Customer customer = getCustomer(customerEmail); // Finds the customer in the database
-            customer.addOrder(newOrderNumber); // Adds the new order number to the existing customer
-        } else {
-            System.out.println("The customer doesn't exist yet, adding customer first.");
-            addCustomer(customerEmail); // Creates the customer first
-            Customer customer = getCustomer(customerEmail);
-            customer.addOrder(newOrderNumber); // Adds the new order number to the new customer object
+        // If the customer exists - continues to adds the new order number information
+        // If customer doesn't exist - exits function and returns to main menu
+        if (getCustomerByEmail(connection, customerEmail) == null) {
+            System.out.println("The customer doesn't exist in the database, please create the customer entry first.");
+            return;
         }
-        writeToFile("customers.txt", customerList); // Saves the new entry to the customers.txt file
-        sortCustomers(); // Saves to the customersAlphabetically.txt file
-        groupCustomers(); // Saves to the customersCityGroups.txt file
 
         // Restaurant name section
         String restaurant;
@@ -142,10 +140,10 @@ public class Main {
         // Loop that continuously asks the user for a valid name until given
         while (true) {
             System.out.print("\nPlease enter the restaurant name: ");
-            restaurant = scan.nextLine();
+            restaurant = scanner.nextLine();
 
             // Condition that checks if the restaurant is on the database and alerts if it isn't
-            if (checkRestaurantDatabase(restaurant)) {
+            if (checkRestaurantDatabase(connection, restaurant)) {
                 break;
             } else {
                 System.out.print("This restaurant isn't on the database.");
@@ -153,13 +151,26 @@ public class Main {
         }
 
         // Client city section
-        String city = getCustomer(customerEmail).getCity(); // Extracts the city name from the client database
+        String city = getCustomerByEmail(connection, customerEmail).getCity(); // Extracts the city name from the client database
 
         // Creates the initial Order object to be added to the database
-        Order newOrder = new Order(newOrderNumber, customerEmail, restaurant, city);
+        int iOrderNumber = Integer.parseInt(newOrderNumber); // Converts the string order number to int
+        int customerID = getCustomerByEmail(connection, customerEmail).getId(); // Finds the correct customer via his email
+
+        // Condition that checks if a driver is available in the are
+        if (getSuitableDriver(connection, city) == null) {
+            System.out.println("Sorry! There are no drivers working in the customer's city.");
+            return;
+        }
+
+        int driverID = getSuitableDriver(connection, city).getId(); // Find a suitable driver for the newly created order and updates the driver's load
+        int restaurantID = getRestaurantByNameAndCity(connection, restaurant, city).getId(); // Finds the correct restaurant via its name and city
+        Order newOrder = new Order(iOrderNumber, customerID, driverID, restaurantID); // Creates a new Order object with the above information
+        addOrder(connection, newOrder); // Saves the object to the database
+        updateDriverLoad(connection, newOrder); // Updates the driver's load after the newly added order
 
         // Order list section
-        printMenu(restaurant);  // Prints the restaurant's menu for the user
+        printMenu(connection, restaurant);  // Prints the restaurant's menu for the user
         boolean orderCheck = true, firstOrder = false; // booleans used to keep user in the add items loop & to assure at least 1 item is added respectively
 
         // Loop that allows user to continuously add items until user exits
@@ -167,14 +178,14 @@ public class Main {
             System.out.print("\nDo you wish to add a item to the order list? " +
                     "\ny - yes" +
                     "\nn - no\n");
-            String orderControl = scan.nextLine();
+            String orderControl = scanner.nextLine();
 
             // Switch statement that performs tasks according to the user's decision
             switch (orderControl) {
 
                 // Case if user wishes to add an item
                 case "y":
-                    addOrderItem(newOrder);
+                    addOrderItem(connection, newOrder);
                     firstOrder = true;
                     break;
 
@@ -198,36 +209,289 @@ public class Main {
 
         // Customer request section - If left empty, it will automatically set it as "None"
         System.out.print("\nPlease enter the customer's special request (if none, leave blank): ");
-        String request = scan.nextLine();
+        String request = scanner.nextLine();
 
         // Condition if the request space is left open/ blank
         if (request.equals("") || request == null) {
             request = "None";
         }
-        newOrder.setSpecialRequest(request); // Sets the special request of the order
-        findSuitableDriver(newOrder); // Find a suitable driver for the newly created order and updates the driver's load
-        orderList.add(newOrder); // Adds the completed Order to the order list
-        writeToFile("orders.txt", orderList); // Updates the orders.txt file/ database with the new completed order
-        writeToInvoiceFile(newOrder); // Writes a new invoice file after the order has been completed
+
+        addCustomerRequest(connection, request, newOrder); // Sets the special request of the order
+    }
+
+    // Function used to list incomplete orders on the database
+    public static void findIncompleteOrders(Connection connection) throws SQLException {
+        // Creates a PreparedStatement to find all the incomplete orders
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Orders WHERE status = 'Incomplete'");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ResultSet result = ps.executeQuery();
+        System.out.println("\nIncomplete order numbers: ");
+
+        // Condition that prints the items when found
+        while (result.next()) {
+            int orderNumber = result.getInt("order_number");
+            Order order = getOrderByOrderNumber(connection, orderNumber);
+            Customer customer = getCustomerById(connection, order.getCustomerID());
+            Restaurant restaurant = getRestaurantById(connection, order.getRestaurantID());
+            FoodDriver driver = getDriverById(connection, order.getDriverID());
+
+            System.out.println("\norder number: " + orderNumber +
+                    "\ncustomer    : " + customer.getFirstname() + " " + customer.getSurname() +
+                    "\ndriver      : " + driver.getFirstname() + " " + driver.getSurname() +
+                    "\nrestaurant  : " + restaurant.getName() +
+                    "\ncity        : " + customer.getCity() +
+                    "\nstatus      : " + order.getStatus());
+        }
+    }
+
+    // Function used to add a new customer to the database
+    public static void addCustomer(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        String addEmail;
+
+        // Loop that keeps asking the user for a valid input until given, or forced to exit
+        while (true) {
+            System.out.print("\nPlease enter the customer's email (leave empty to exit): ");
+            addEmail = scanner.nextLine();
+
+            // Condition that exits the function if the user leaves the email field input empty
+            if (addEmail.equals("")) {
+                return;
+            }
+
+            // Condition that checks if the entered email is a valid format and alerts if it is not
+            if (isValidEmailAddress(addEmail)) {
+                break;
+            } else {
+                System.out.print("Please enter a valid email address.");
+            }
+        }
+
+        // Condition that checks if the customer email is already in the database
+        if (getCustomerByEmail(connection, addEmail) == null) {
+            // Adds the new customer with the given email
+            createCustomer(connection, addEmail);
+        } else {
+            System.out.println("Customer already exists in database.");
+        }
+    }
+
+    // Function used to find a specified customer in the database
+    public static void findCustomer(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("\nEnter the customer email address: ");
+        String findEmail = (scanner.nextLine());
+
+        // Condition that checks if the customer exists in the database and prints their details if found
+        if (getCustomerByEmail(connection, findEmail) == null) {
+            System.out.println("Customer doesn't exist");
+        } else {
+            System.out.println("The customer details are: ");
+            System.out.println(getCustomerByEmail(connection, findEmail));
+        }
+    }
+
+    public static void editCustomer(Connection connection) throws SQLException {
+
+        // Loop that asks what information the user wishes to change
+        while (true) {
+            System.out.println("\nWhat do you wish to change: " +
+                    "\n1 - Email address" +
+                    "\n2 - First name" +
+                    "\n3 - Surname" +
+                    "\n4 - Contact number" +
+                    "\n5 - Address" +
+                    "\n6 - City");
+
+            Scanner scanner = new Scanner(System.in);
+            String input = scanner.nextLine();
+
+            // Switch statement which reacts to the user's input and calls the related functions
+            switch (input) {
+
+                // Case if the user wishes to edit the customer's email
+                case "1":
+                    editCustomerEmail(connection);
+                    return;
+
+                // Case if the user wishes to edit the customer's first name
+                case "2":
+                    editCustomerFirstname(connection);
+                    return;
+
+                // Case if the user wishes to edit the customer's surname
+                case "3":
+                    editCustomerSurname(connection);
+                    return;
+
+                // Case if the user wishes to edit the customer's number
+                case "4":
+                    editCustomerNumber(connection);
+                    return;
+
+                // Case if the user wishes to edit the customer's address
+                case "5":
+                    editCustomerAddress(connection);
+                    return;
+
+                // Case if the user wishes to edit the customer's city
+                case "6":
+                    editCustomerCity(connection);
+                    return;
+
+                // Default case if user enters an invalid input
+                default:
+                    System.out.println("Please enter a valid input.");
+                    break;
+            }
+        }
+    }
+
+    // Function used to find an incomplete order to finalise and initiate the finalising process
+    public static void finaliseOrder(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        String incompleteOrderNumber;
+
+        // Loop that keeps asking the user for a valid input until given, or forced to exit
+        while (true) {
+            System.out.print("\nPlease enter an incomplete order number: ");
+            incompleteOrderNumber = scanner.nextLine();
+
+            // Condition that checks if the entered number is a valid format and alerts if it is not
+            if (checkNumbersOnly(incompleteOrderNumber)) {
+                int iOrderNumber = Integer.parseInt(incompleteOrderNumber);
+
+                // Condition that checks if the order exists in the database
+                if (getOrderByOrderNumber(connection, iOrderNumber) != null) {
+                    Order order = getOrderByOrderNumber(connection, iOrderNumber);
+
+                    // Condition that checks if the order is incomplete
+                    if(order.getStatus().equals("Incomplete")) {
+                        writeToInvoiceFile(connection, iOrderNumber); // Writes a new invoice file after finding an incompleted order
+                        break;
+                    } else {
+                        System.out.println("That order is already completed.");
+                    }
+                } else {
+                    System.out.print("That order number doesn't exist.");
+                }
+            } else {
+                System.out.print("Please enter a valid order number.");
+            }
+        }
+    }
+
+    // Functions used to create/ add new records
+    // Function used to add an order record
+    public static void addOrder(Connection connection, Order order) throws SQLException {
+        // Creates a PreparedStatement to add the order to the database
+        PreparedStatement ps = connection.prepareStatement("INSERT INTO Orders VALUES (?, ?, ?, ?, ?, ?)");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, order.getOrderNumber());
+        ps.setInt(2, order.getCustomerID());
+        ps.setInt(3, order.getDriverID());
+        ps.setInt(4, order.getRestaurantID());
+        ps.setString(5, "None");
+        ps.setString(6, "Incomplete");
+        ps.executeUpdate();
+    }
+
+    // Function used to add items to an order record
+    public static void addOrderItem(Connection connection, Order order) throws SQLException {
+
+        Scanner scanner = new Scanner(System.in);
+        String itemName;
+
+        // Loop that continuously asks for an valid item name until given
+        while (true) {
+            System.out.print("Please enter the item name: ");
+            itemName = scanner.nextLine();
+
+            // Condition that checks if the item name isn't a blank input
+            if (!itemName.equals("")) {
+                break;
+            }
+            System.out.println("You cannot leave this blank.");
+        }
+
+        int restaurantID = order.getRestaurantID();
+        String restaurantName = getRestaurantById(connection, restaurantID).getName();
+
+        // Condition that checks if the item name given is on the specified restaurant's menu - alerts if not found
+        if (getItemByName(connection, itemName, restaurantName) != null) {
+
+            Item newItem = getItemByName(connection, itemName, restaurantName);
+            int orderNumber = order.getOrderNumber();
+            int itemID = newItem.getId();
+            int quantity;
+            String input;
+
+            // Loop that continuously asks for a valid quantity of the specified item
+            while (true) {
+                System.out.print("Enter the desired quantity of the item: ");
+                input = scanner.nextLine();
+
+                // Condition that checks if the quantity isn't a blank field - alerts if not valid
+                if (!input.equals("")) {
+                    quantity = Integer.parseInt(input);
+                    break;
+                }
+                System.out.println("\nYou have to specify a quantity.");
+            }
+
+            // Creates a PreparedStatement to add an Order item to a placed order
+            PreparedStatement ps = connection.prepareStatement("INSERT INTO OrderItems VALUES (?, ?, ?)");
+            // Updates and executes the PreparedStatement parameters with the given variables from the user
+            ps.setInt(1, orderNumber);
+            ps.setInt(2, itemID);
+            ps.setInt(3, quantity);
+            ps.executeUpdate();
+        } else {
+            System.out.println("That item isn't on this restaurant's menu. Please retry.");
+        }
+    }
+
+    // Function used to add a customer request to an order
+    public static void addCustomerRequest(Connection connection, String request, Order order) throws SQLException {
+        // Creates a PreparedStatement to add the request to an existing order
+        PreparedStatement ps = connection.prepareStatement("UPDATE Orders SET special_request = ? WHERE order_number = ?;");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setString(1, request);
+        ps.setInt(2, order.getOrderNumber());
+        ps.executeUpdate();
     }
 
     // Function that adds a new customer to the customer database
-    public static void addCustomer(String email) {
-        Scanner scan = new Scanner(System.in);
-
+    public static void createCustomer(Connection connection, String email) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
         // Name section
-        String name;
+        String firstname;
 
         // Loop that continues to ask for a valid name until given
         while (true) {
-            System.out.print("\nPlease enter the customer's name: ");
-            name = scan.nextLine();
+            System.out.print("\nPlease enter the customer's first name: ");
+            firstname = scanner.nextLine();
 
             // Condition that checks if the name is not an empty space
-            if (!name.equals("")) {
+            if (!firstname.equals("")) {
                 break;
             }
-            System.out.print("\nPlease enter a valid name.");
+            System.out.print("\nPlease enter a valid first name.");
+        }
+
+        // Surname section
+        String surname;
+
+        // Loop that continues to ask for a valid name until given
+        while (true) {
+            System.out.print("\nPlease enter the customer's surname: ");
+            surname = scanner.nextLine();
+
+            // Condition that checks if the name is not an empty space
+            if (!surname.equals("")) {
+                break;
+            }
+            System.out.print("\nPlease enter a valid surname.");
         }
 
         // Contact number section
@@ -236,7 +500,7 @@ public class Main {
         // Loop that continues to ask for a valid number until given
         while (true) {
             System.out.print("\nPlease enter the customer's contact number: ");
-            contactNumber = scan.nextLine();
+            contactNumber = scanner.nextLine();
 
             // Condition that checks if the input is numbers only by calling the "checkNumbersOnly" function
             if (checkNumbersOnly(contactNumber)) {
@@ -252,7 +516,7 @@ public class Main {
         // Loop that keeps asking the user for a valid address until given
         while (true) {
             System.out.print("\nPlease enter the customer's address (123 Street name - District): ");
-            address = scan.nextLine();
+            address = scanner.nextLine();
 
             // Condition that checks if the entered address is a valid format
             if (isValidAddress(address)) {
@@ -268,7 +532,7 @@ public class Main {
         // Loop that keeps asking the user for a valid city until given
         while (true) {
             System.out.print("\nPlease enter the customer's city: ");
-            city = scan.nextLine();
+            city = scanner.nextLine();
 
             // Condition that checks if the city is not an empty space
             if (!city.equals("")) {
@@ -277,581 +541,549 @@ public class Main {
             System.out.println("You cannot leave this blank.");
         }
 
-        Customer c = new Customer(name, contactNumber, email, address, city); // Creates a new Customer object with the provided properties
-        customerList.add(c); // Adds the complete Customer object to the customer list
-        writeToFile("customers.txt", customerList); // Updates the customers.txt file/ database with the newly added customer
-        sortCustomers(); // Updates the customersAlphabetically.txt file with the newly added customer
-        groupCustomers(); // Updates the customersCityGroups.txt file with the newly added customer
+        Customer c = new Customer(1, firstname, surname, contactNumber, email, address, city); // Creates a new Customer object with the provided properties
+
+        // Creates a PreparedStatement to add a customer to the table
+        PreparedStatement ps = connection.prepareStatement("INSERT INTO Customers VALUES (?, ?, ?, ?, ?, ?)");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setString(1, contactNumber);
+        ps.setString(2, email);
+        ps.setString(3, firstname);
+        ps.setString(4, surname);
+        ps.setString(5, address);
+        ps.setString(6, city);
+        ps.executeUpdate();
     }
 
-    // Function that adds a new restaurant to the restaurant database
-    public static void addRestaurant() {
-        Scanner scan = new Scanner(System.in);
-
-        // Name section
-        String name;
-
-        // Loop that continuously asks the user for a valid name until given
-        while (true) {
-            System.out.print("\nPlease enter the restaurant's name: ");
-            name = scan.nextLine();
-
-            // Condition that checks if the city is not an empty space
-            if (!name.equals("")) {
-                break;
-            }
-            System.out.print("Please enter a valid name.");
-        }
-
-        // Branch section
-        HashMap<String, String> branches = new HashMap<>();
-        boolean branchSection = true, firstBranch = true;
-
-        // Loop that continuously asks for a user to add branches until user exits
-        while (branchSection) {
-            System.out.print("\nDo you wish to add a branch?" +
-                    "\ny - yes" +
-                    "\nn - no\n");
-            String input = scan.nextLine();
-
-            // Switch statement that performs tasks according to the user's decision
-            switch (input) {
-
-                // Case if user wishes to add a branch
-                case "y":
-                    String branchName, branchNumber;
-                    boolean addBranch = true;
-
-                    // Loop that continuously asks for a branch name until a valid input is given - alerts if invalid
-                    while (addBranch) {
-                        System.out.print("\nPlease enter a branch location: ");
-                        branchName = scan.nextLine();
-
-                        // Condition that checks of the branch name isn't a blank input
-                        if (!branchName.equals("")) {
-
-                            // Loop that continuously asks for the branch's number - alerts if invalid
-                            while (true) {
-                                System.out.print("\nPlease enter the branch's contact number: ");
-                                branchNumber = scan.nextLine();
-
-                                // Condition that checks if the number given is a valid input
-                                if (checkNumbersOnly(branchNumber)) {
-                                    branches.put(branchName, branchNumber);
-                                    firstBranch = false;
-                                    addBranch = false;
-                                    break;
-                                }
-                                System.out.print("Please enter a valid number.");
-                            }
-                        } else {
-                            System.out.print("Please enter a valid name.");
-                        }
-                    }
-                    break;
-
-                // Case if user decides to stop adding branches
-                case "n":
-                    // Condition that checks if the user has added at least one branch
-                    if (firstBranch) {
-                        System.out.println("You need to add at least one branch.");
-                        break;
-                    }
-                    branchSection = false;
-                    break;
-
-                // Case if user enters an invalid input
-                default:
-                    System.out.println("Please enter a valid input.");
-            }
-        }
-
-        // Menu section
-        ArrayList<Item> menu = new ArrayList<>();
-        boolean menuSection = true, firstItem = true;
-
-        // Loop that continuously asks for a user to add an item until user exits
-        while (menuSection) {
-            System.out.println("\nDo you wish to add a item?" +
-                    "\ny - yes" +
-                    "\nn - no");
-            String input = scan.nextLine();
-
-            // Switch statement that performs tasks according to the user's decision
-            switch (input) {
-
-                // Case if user wishes to add an item
-                case "y":
-                    boolean addItem = true;
-
-                    // Loop that continuously asks for a valid item name until given
-                    while (addItem) {
-                        String itemName, sItemPrice;
-                        double itemPrice;
-
-                        System.out.print("\nPlease enter the item name: ");
-                        itemName = scan.nextLine();
-
-                        // Condition that checks if the item name isn't blank, otherwise alerts the user
-                        if (!itemName.equals("")) {
-
-                            // Loop that continuously asks for a valid item price
-                            while (true) {
-                                System.out.print("\nPlease enter the item's price: ");
-                                sItemPrice = scan.nextLine();
-
-                                // Condition that checks validity of the item price and adds it to the menu array, otherwise alerts the user
-                                if (checkNumbersOnly(sItemPrice)) {
-                                    itemPrice = Double.parseDouble(sItemPrice); // Converts the valid price to a double
-                                    Item item = new Item(itemName, itemPrice); // Creates an Item object with given properties
-                                    menu.add(item); // Adds the item to the menu arraylist
-                                    firstItem = false; // Lets the loop know the first item has been added
-                                    addItem = false; // Allows the program to break out of the add while loop to go back to main menu
-                                    break; // Breaks out of the current while loop checking item prices
-                                }
-                                System.out.print("Please enter a valid number.");
-                            }
-                        } else {
-                            System.out.print("Please enter a valid name.");
-                        }
-                    }
-                    break;
-
-                // Case if user wishes to stop adding items
-                case "n":
-                    // Condition that checks if at least one item has been added already
-                    if (firstItem) {
-                        System.out.println("You need to add at least one item.");
-                        break;
-                    }
-                    menuSection = false;
-                    break;
-
-                // Case if user enters an invalid input
-                default:
-                    System.out.println("Please enter a valid input.");
-            }
-        }
-
-        Restaurant r = new Restaurant(name, branches, menu); // Creates a new Restaurant object with the provided properties
-        restaurantList.add(r); // Adds the completed Restaurant object to the restaurant list
-        writeToFile("restaurants.txt", restaurantList); // Updates the restaurants.txt file/ database with the newly added customer
-    }
-
-    // Function used to add items to an order list
-    public static void addOrderItem(Order order) {
-
-        Scanner scan = new Scanner(System.in);
-        String itemName;
-
-        // Loop that continuously asks for an valid item name until given
-        while (true) {
-            System.out.print("Please enter the item name: ");
-            itemName = scan.nextLine();
-
-            // Condition that checks if the item name isn't a blank input
-            if (!itemName.equals("")) {
-                break;
-            }
-            System.out.println("You cannot leave this blank.");
-        }
-
-        String restaurantName = order.getRestaurant();
-
-        // Condition that checks if the item name given is on the specified restaurant's menu - alerts if not found
-        if (itemIsOnMenu(itemName, restaurantName)) {
-            double itemPrice = 0.0;
-
-            // Loop that Searches for the restaurant specified from the restaurant database
-            for (Restaurant res : restaurantList) {
-
-                // Condition if the restaurant named is found on the database
-                if (res.getName().equals(restaurantName)) {
-                    ArrayList<Item> menu = res.getMenu();
-
-                    // Loop that searches for the item named on found restaurant's menu
-                    for (Item item : menu) {
-
-                        // Condition that gets the found item's price from the menu
-                        if (item.getName().equals(itemName)) {
-                            itemPrice = item.getPrice();
-                        }
-                    }
-                }
-            }
-
-            String input;
-            int quantity;
-
-            // Loop that continuously asks for a valid quantity of the specified item
-            while (true) {
-                System.out.print("Enter the desired quantity of the item: ");
-                input = scan.nextLine();
-
-                // Condition that checks if the quantity isn't a blank field - alerts if not valid
-                if (!input.equals("")) {
-                    quantity = Integer.parseInt(input);
-                    break;
-                }
-                System.out.println("\nYou have to specify a quantity.");
-            }
-
-            Item newItem = new Item(itemName, itemPrice, quantity); // Creates a new Item object with the given properties
-            order.addOrderItem(newItem); // Adds the new Item to the order's array list
-
-        } else {
-            System.out.println("That item isn't on the menu.");
-        }
-    }
-
-    // Function used to print the specified restaurant's menu
-    public static void printMenu(String restaurant) {
-        DecimalFormat df = new DecimalFormat("####0.00"); // DecimalFormat object that defines the format of how the prices should be printed
-
-        //  Loops through and prints the menu of the specified restaurant
-        System.out.println("\nMenu: ");
-
-        // Loop that finds the given restaurant form the restaurant list
-        for (Restaurant res : restaurantList) {
-
-            // Condition if the restaurant does exist
-            if (res.getName().equals(restaurant)) {
-                ArrayList<Item> menu = res.getMenu();
-
-                // Loops through each item on the specified restaurant's menu and prints it out
-                for (Item item : menu) {
-                    String itemName = item.getName();
-                    double itemPrice = item.getPrice();
-                    System.out.println(itemName + " : " + "R" + df.format(itemPrice));
-                }
-            }
-        }
-    }
-
+    // Functions used to fetch a specific record
     // Function used to find the best driver for a new order
-    public static void findSuitableDriver(Order order) {
-        String city = order.getCity();
-        String driverName = "";
-        int minimumLoad = 100;
+    public static FoodDriver getSuitableDriver(Connection connection, String city) throws SQLException {
+        // Creates a PreparedStatement to find a suitable driver
+        PreparedStatement ps = connection.prepareStatement("SELECT TOP 1 * FROM Drivers WHERE city = ? ORDER BY load ASC;");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setString(1, city);
+        ResultSet result = ps.executeQuery();
 
-        // Loop that finds drivers in the same location as that of the order and then looks for the one with the minimum load
-        for (FoodDriver driver : driverList) {
-            if (city.equals(driver.getCity())) {
-                if (minimumLoad > driver.getLoad()) {
-                    driverName = driver.getName();
-                    minimumLoad = driver.getLoad();
-                }
-            }
-        }
-
-        // Loop that increments the load of the driver that was selected for the job
-        for (FoodDriver driver : driverList) {
-            if (driverName.equals(driver.getName())) {
-                driver.addLoad();
-            }
-        }
-
-        writeToFile("driver-info.txt", driverList); // Updates the driver-info.txt file with the incremented load
-        order.setDriver(driverName); // Sets the driver name of the order
-    }
-
-    // Function used to find the existing customer by email (which is used as the unique identifier)
-    public static Customer getCustomer(String email) {
-
-        // Loop that searches the customer list for the given email
-        for (Customer customer : customerList) {
-
-            // Condition if the customer was found on the database - else returns null
-            if ((customer.getEmail().equals(email))) {
-                return customer;
-            }
+        // Condition that returns a driver record found
+        if (result.next()) {
+            int id = result.getInt("id");
+            String firstname = result.getString("firstname");
+            String surname = result.getString("surname");
+            int load = result.getInt("load");
+            return new FoodDriver(id, firstname, surname, city, load);
         }
         return null;
     }
 
-    // Function used to find the existing restaurant by name
-    public static Restaurant getRestaurant(String name) {
+    // Function used to find the existing customer by id
+    public static Customer getCustomerById(Connection connection, int id) throws SQLException {
+        // Creates a PreparedStatement to find a specific customer
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Customers WHERE id = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, id);
+        ResultSet result = ps.executeQuery();
 
-        // Loop that searches the restaurant list for the given restaurant
-        for (Restaurant restaurant : restaurantList) {
-
-            // Condition if the restaurant was found on the database - else returns null
-            if ((restaurant.getName().equals(name))) {
-                return restaurant;
-            }
+        // Condition that returns the customer record if found
+        if (result.next()) {
+            String firstname = result.getString("firstname");
+            String surname = result.getString("surname");
+            String number = result.getString("number");
+            String email = result.getString("email");
+            String address = result.getString("address");
+            String city = result.getString("city");
+            return new Customer(id, firstname, surname, number, email, address, city);
         }
         return null;
     }
 
-    // Function used to sort the customers list alphabetically
-    public static void sortCustomers() {
-        // Creates a new editable arraylist of String that will be returned as the result
-        ArrayList<String> sortedCustomers = new ArrayList<>();
+    // Function used to find the existing customer by email
+    public static Customer getCustomerByEmail(Connection connection, String email) throws SQLException {
+        // Creates a PreparedStatement to find a specific customer
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Customers WHERE email = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setString(1, email);
+        ResultSet result = ps.executeQuery();
 
-        // Loops through the customersList array list and extracts the name and order numbers only, then adds this to the String arraylist
-        for (Customer customer : customerList) {
-            String newLine = customer.getName() + ", " + customer.getOrders();
-            sortedCustomers.add(newLine);
+        // Condition that returns the customer record if found
+        if (result.next()) {
+            int id = result.getInt("id");
+            String firstname = result.getString("firstname");
+            String surname = result.getString("surname");
+            String number = result.getString("number");
+            String address = result.getString("address");
+            String city = result.getString("city");
+            return new Customer(id, firstname, surname, number, email, address, city);
         }
-        // Sorts the name's of the new arraylist alphabetically
-        sortedCustomers.sort(String::compareToIgnoreCase);
-        // Returns the sorted by name array list containing only names and order numbers
-        writeToFile("customersAlphabetically.txt", sortedCustomers);
+        return null;
     }
 
-    // Function used to group customers by their city
-    public static void groupCustomers() {
-        // Creates a new editable arraylist of Customer type with the information of customersList
-        ArrayList<Customer> groupedCustomers = new ArrayList<>(customerList);
-        // Creates a new arraylist of String type that will be returned as the result
-        ArrayList<String> customersToPrint = new ArrayList<>();
+    // Function used to find the existing restaurant by ID
+    public static Restaurant getRestaurantById(Connection connection, int id) throws SQLException {
+        // Creates a PreparedStatement to find a specific restaurant
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Restaurants WHERE id = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, id);
+        ResultSet result = ps.executeQuery();
 
-        // Sorts the new arraylist of customers by their city names
-        groupedCustomers.sort(Comparator.comparing(Customer::getCity));
-
-        // Loops through the sorted arraylist and extracts the name and city only, then adds this to the String arraylist
-        for (Customer customer : groupedCustomers) {
-            String newLine = customer.getName() + ", " + customer.getCity();
-            customersToPrint.add(newLine);
+        // Condition that returns the restaurant record if found
+        if (result.next()) {
+            String name = result.getString("name");
+            String number = result.getString("number");
+            String city = result.getString("city");
+            return new Restaurant(id, name, number, city);
         }
-        // Writes the to print array list with the sorted names and cities to the "customersCityGroups.txt" file
-        writeToFile("customersCityGroups.txt", customersToPrint);
+        return null;
     }
 
-    // Functions for handling files
-    // Function used to write program data saved on a list to the specified file by using generics
-    public static <T> void writeToFile(String filename, ArrayList<T> list) {
-        // Condition that tries to write to the "filename" file with a formatter
-        try {
-            Formatter f = new Formatter(filename);
-            for (T object : list) {
-                f.format("%s", object + "\n");
-            }
-            f.close();
-        }
+    // Function used to find the existing restaurant by name & city
+    public static Restaurant getRestaurantByNameAndCity(Connection connection, String name, String city) throws SQLException {
+        // Creates a PreparedStatement to find a specific restaurant
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Restaurants WHERE name = ? AND city = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setString(1, name);
+        ps.setString(2, city);
+        ResultSet result = ps.executeQuery();
 
-        // Condition that occurs if the file cannot be written to
-        catch (Exception e) {
-            System.out.println("Error: " + e);
+        // Condition that returns the restaurant record if found
+        if (result.next()) {
+            int id = result.getInt("id");
+            String number = result.getString("number");
+            return new Restaurant(id, name, number, city);
         }
+        return null;
     }
 
-    // Function used to read from the customer file and populate the arraylist with that information
-    public static void readFromCustomerFile() {
-        // Condition that tries to read from the "customers.txt" file with a File and Scanner object
-        try {
-            File f = new File("customers.txt");
-            Scanner scan = new Scanner(f);
+    // Function used to find the existing drivers by ID
+    public static FoodDriver getDriverById(Connection connection, int id) throws SQLException {
+        // Creates a PreparedStatement to find a specific restaurant
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Drivers WHERE id = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, id);
+        ResultSet result = ps.executeQuery();
 
-            // Loop that checks if the text file has more content to read and adds them to the lines array if so
-            while (scan.hasNextLine()) {
-                String line = scan.nextLine();
-                String[] lineParts = line.split(", ", 6);
-
-                String name = lineParts[0]; // Extracts name
-                String email = lineParts[1]; // Extracts email
-                String contactNumber = lineParts[2]; // Extracts contact number
-                String address = lineParts[3]; // Extracts address
-                String city = lineParts[4]; // Extracts city
-
-                // Extracts the previous orders list and adds them to the customer object one by one
-                String ordersLine = lineParts[5];
-                String trim = ordersLine.replace("[", "").replace("]", "");
-                String[] ordersParts = trim.split(", ");
-
-                // Creates a new Customer object with all the extracted information
-                Customer customer = new Customer(name, contactNumber, email, address, city);
-
-                // Adds the individual order numbers to the new Customer object's order list
-                for (String order : ordersParts) {
-                    customer.addOrder(order);
-                }
-
-                customerList.add(customer); // Adds the completed Customer object to the customer list
-            }
+        // Condition that returns the restaurant record if found
+        if (result.next()) {
+            String firstname = result.getString("firstname");
+            String surname = result.getString("surname");
+            String city = result.getString("city");
+            int load = result.getInt("load");
+            return new FoodDriver(id, firstname, surname, city, load);
         }
-
-        // Condition that occurs if the file cannot be read
-        catch (Exception e) {
-            System.out.println("Customer file - Error: " + e);
-        }
+        return null;
     }
 
-    // Function used to read from the restaurant file and populate the arraylist with that information
-    public static void readFromRestaurantFile() {
-        // Condition that tries to read from the "restaurant.txt" file with a File and Scanner object
-        try {
-            File f = new File("restaurants.txt");
-            Scanner scan = new Scanner(f);
+    // Function used to find the existing order by order number
+    public static Order getOrderByOrderNumber(Connection connection, int orderNumber) throws SQLException {
+        // Creates a PreparedStatement to find a specific order
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Orders WHERE order_number = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, orderNumber);
+        ResultSet result = ps.executeQuery();
 
-            int lineCounter = 0; // Counter that controls how the different lines are handled
-            String name = "";
-            HashMap<String, String> branches = new HashMap<>();
-            ArrayList<Item> menu = new ArrayList<>();
+        // Condition that returns the order record if found
+        if (result.next()) {
+            int id = result.getInt("id");
+            int customerID = result.getInt("customer_id");
+            int driverID = result.getInt("driver_id");
+            int restaurantID = result.getInt("restaurant_id");
+            String specialRequest = result.getString("special_request");
+            String status = result.getString("status");
+            return new Order(id, orderNumber, customerID, driverID, restaurantID, specialRequest, status);
+        }
+        return null;
+    }
 
-            // Loop that checks if the text file has more content to read and adds them to the lines array if so
-            while (scan.hasNextLine()) {
+    // Function used to find the order items of an order
+    public static ArrayList<Item> getOrderItems(Connection connection, Order order) throws SQLException {
+        ArrayList<Item> orderItems = new ArrayList<>();
+        int orderNumber = order.getOrderNumber();
 
-                String line = scan.nextLine();
+        // Creates a PreparedStatement to find a specific order
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM OrderItems WHERE order_number = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, orderNumber);
+        ResultSet result = ps.executeQuery();
 
-                // Condition if the line is a name of a restaurant
-                if (lineCounter == 0) {
-                    name = line;
-                }
+        // Condition that returns the order record if found
+        while (result.next()) {
+            int itemNumber = result.getInt("item_number");
+            int qty = result.getInt("qty");
 
-                // Condition if the line is the branches of a restaurant
-                if (lineCounter == 1) {
-                    String trim = line.replace("{", "").replace("}", "");
-                    String[] branchArray = trim.split(", ");
+            Item item = getItemById(connection, itemNumber);
+            int id = item.getId();
+            String name = item.getName();
+            double price = item.getPrice();
+            orderItems.add(new Item(id, name, price, qty));
+        }
+        return orderItems;
+    }
 
-                    for (String s : branchArray) {
-                        String[] split = s.split("=");
-                        String location = split[0];
-                        String contactNumber = split[1];
-                        branches.put(location, contactNumber);
+    // Function used to find an item in the database
+    public static Item getItemById(Connection connection, int itemNumber) throws SQLException {
+        // Creates a PreparedStatement to find a specific item via its item id
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Items WHERE id = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, itemNumber);
+        ResultSet result = ps.executeQuery();
+
+        // Condition that returns true if the record is found, otherwise false
+        if (result.next()) {
+            String itemName = result.getString("name");
+            double itemPrice = result.getDouble("price");
+            return new Item(itemNumber, itemName, itemPrice);
+        }
+        return null;
+    }
+
+    // Function used to find an item in the database
+    public static Item getItemByName(Connection connection, String itemName, String restaurant) throws SQLException {
+        // Creates a PreparedStatement to find a specific item via its name
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Items WHERE name = ? AND restaurant = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setString(1, itemName);
+        ps.setString(2, restaurant);
+        ResultSet result = ps.executeQuery();
+
+        // Condition that returns true if the record is found, otherwise false
+        if (result.next()) {
+            int id = result.getInt("id");
+            double itemPrice = result.getDouble("price");
+            return new Item(id, itemName, itemPrice);
+        }
+        return null;
+    }
+
+    // Functions used to edit records
+    // Function used to add an order record
+    public static void updateDriverLoad(Connection connection, Order order) throws SQLException {
+        // Creates a PreparedStatement to update the assigned driver's load
+        PreparedStatement ps = connection.prepareStatement("UPDATE Drivers SET load = load+1 WHERE id =?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, order.getDriverID());
+        ps.executeUpdate();
+    }
+
+    // Function used to edit a customer's email
+    public static void editCustomerEmail(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        boolean edit = true;
+
+        // Loop that continuously asks for a email until a correct email is given
+        while (true) {
+            System.out.print("\nPlease enter the customer's email address: ");
+            String email = scanner.nextLine();
+
+            // Condition that checks if the email is in a valid format
+            if (isValidEmailAddress(email)) {
+
+                // Condition that checks if the email exists in the database
+                if (getCustomerByEmail(connection, email) != null) {
+                    Customer customer = getCustomerByEmail(connection, email);
+                    int id = customer.getId();
+
+                    // Loop that continuously asks for a new email until a correct email is given
+                    while (edit) {
+                        System.out.print("\nPlease enter the new email address: ");
+                        String newEmail = scanner.nextLine();
+
+                        // Condition that checks if the email is in a valid format
+                        if (isValidEmailAddress(newEmail)) {
+                            // Creates a PreparedStatement to edit the specified email
+                            PreparedStatement ps = connection.prepareStatement("UPDATE Customers SET email =? WHERE id =?");
+                            // Updates and executes the PreparedStatement parameters with the given variables from the user
+                            ps.setString(1, newEmail);
+                            ps.setInt(2, id);
+                            ps.executeUpdate();
+                            System.out.println("Record updated!");
+                            edit = false; // Exits the loop after a successful update
+                        } else {
+                            System.out.println("Please enter a valid email.");
+                        }
                     }
+                    break;
+                } else {
+                    System.out.println("That email doesn't exist in the database.");
                 }
+            } else {
+                System.out.println("Please enter a valid email.");
+            }
+        }
+    }
 
-                // Condition if the line is the menu of a restaurant
-                if (lineCounter == 2) {
-                    String trim = line.replace("[", "").replace("]", "");
-                    String[] menuArray = trim.split(", ");
+    // Function used to edit a customer's first name
+    public static void editCustomerFirstname(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        boolean edit = true;
 
-                    for (int i = 0; i < menuArray.length; i += 3) {
-                        String itemName = menuArray[i];
-                        double itemPrice = Double.parseDouble(menuArray[i + 1]);
-                        menu.add(new Item(itemName, itemPrice));
+        // Loop that continuously asks for a email until a correct email is given
+        while (true) {
+            System.out.print("\nPlease enter the customer's email address: ");
+            String email = scanner.nextLine();
+
+            // Condition that checks if the email is in a valid format
+            if (isValidEmailAddress(email)) {
+
+                // Condition that checks if the email exists in the database
+                if (getCustomerByEmail(connection, email) != null) {
+                    Customer customer = getCustomerByEmail(connection, email);
+                    int id = customer.getId();
+
+                    // Loop that continuously asks for a new first name until a correct one is given
+                    while (edit) {
+                        System.out.print("\nPlease enter the new first name: ");
+                        String newFirstname = scanner.nextLine();
+
+                        // Condition that checks if the first name is in a valid format
+                        if (!newFirstname.equals("")) {
+                            // Creates a PreparedStatement to edit the specified firstname
+                            PreparedStatement ps = connection.prepareStatement("UPDATE Customers SET firstname =? WHERE id =?");
+                            // Updates and executes the PreparedStatement parameters with the given variables from the user
+                            ps.setString(1, newFirstname);
+                            ps.setInt(2, id);
+                            ps.executeUpdate();
+                            System.out.println("Record updated!");
+                            edit = false; // Exits the loop after a successful update
+                        } else {
+                            System.out.println("Please enter a valid first name.");
+                        }
                     }
+                    break;
+                } else {
+                    System.out.println("That email doesn't exist in the database.");
                 }
-
-                lineCounter++; // Increments the line counter after essential information has been extracted
-
-                // Condition if the empty line is reached after the restaurant's details
-                if (lineCounter == 4) {
-                    // Creates a clone of the branches Hashmap and menu arraylist to create a new Restaurant object with
-                    // This is because clearing the branches and menu Map and ArrayList will clear the properties of the restaurant object as well
-                    HashMap<String, String> branchMap = (HashMap) branches.clone();
-                    ArrayList<Item> menuList = (ArrayList<Item>) menu.clone();
-
-                    // Adds a new Restaurant object to the global restaurantList with the cloned Map and ArrayList
-                    restaurantList.add(new Restaurant(name, branchMap, menuList));
-
-                    // Resets all variables for original branches Map and menu ArrayList to be repopulated by new lines
-                    name = "";
-                    branches.clear();
-                    menu.clear();
-                    lineCounter = 0; // Resets the line counter to indicate a single object has been added and start over for a new one
-                }
+            } else {
+                System.out.println("Please enter a valid email.");
             }
-        }
-
-        // Condition that occurs if the file cannot be read
-        catch (Exception e) {
-            System.out.println("Restaurant file - Error: " + e);
         }
     }
 
-    // Function used to read from the drivers file and populate the arraylist with that information
-    public static void readFromDriverFile() {
-        // Condition that tries to read from the driver-info.txt file with a File and Scanner object
-        try {
-            File f = new File("driver-info.txt");
-            Scanner scan = new Scanner(f);
+    // Function used to edit a customer's surname
+    public static void editCustomerSurname(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        boolean edit = true;
 
-            // Loop that checks if the text file has more content to read and adds them to the lines array if so
-            while (scan.hasNextLine()) {
-                String line = scan.nextLine();
-                String[] lineParts = line.split(", ");
+        // Loop that continuously asks for a email until a correct email is given
+        while (true) {
+            System.out.print("\nPlease enter the customer's email address: ");
+            String email = scanner.nextLine();
 
-                String name = lineParts[0]; // Extracts driver name
-                String city = lineParts[1]; // Extracts driver city
-                int load = Integer.parseInt(lineParts[2]); // Extracts driver load
+            // Condition that checks if the email is in a valid format
+            if (isValidEmailAddress(email)) {
 
-                // Creates a new customer object with all extracted information
-                FoodDriver driver = new FoodDriver(name, city, load);
-                driverList.add(driver); // Adds the complete Driver object to the customer list
+                // Condition that checks if the email exists in the database
+                if (getCustomerByEmail(connection, email) != null) {
+                    Customer customer = getCustomerByEmail(connection, email);
+                    int id = customer.getId();
+
+                    // Loop that continuously asks for a new surname until a correct one is given
+                    while (edit) {
+                        System.out.print("\nPlease enter the new surname: ");
+                        String newSurname = scanner.nextLine();
+
+                        // Condition that checks if the surname is in a valid format
+                        if (!newSurname.equals("")) {
+                            // Creates a PreparedStatement to edit the specified surname
+                            PreparedStatement ps = connection.prepareStatement("UPDATE Customers SET surname =? WHERE id =?");
+                            // Updates and executes the PreparedStatement parameters with the given variables from the user
+                            ps.setString(1, newSurname);
+                            ps.setInt(2, id);
+                            ps.executeUpdate();
+                            System.out.println("Record updated!");
+                            edit = false; // Exits the loop after a successful update
+                        } else {
+                            System.out.println("Please enter a valid surname.");
+                        }
+                    }
+                    break;
+                } else {
+                    System.out.println("That email doesn't exist in the database.");
+                }
+            } else {
+                System.out.println("Please enter a valid email.");
             }
-        }
-
-        // Condition that occurs if the file cannot be read
-        catch (Exception e) {
-            System.out.println("Restaurant file - Error: " + e);
         }
     }
 
-    // Function used to read from the orders file and populate the arraylist with that information
-    public static void readFromOrderFile() {
-        // Condition that tries to read from the orders.txt file with a File and Scanner object
-        try {
-            File f = new File("orders.txt");
-            Scanner scan = new Scanner(f);
+    // Function used to edit a customer's contact number
+    public static void editCustomerNumber(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        boolean edit = true;
 
-            // Loop that checks if the text file has more content to read and adds them to the lines array if so
-            while (scan.hasNextLine()) {
-                String line = scan.nextLine();
-                String[] lineParts = line.split(", ", 7);
+        // Loop that continuously asks for a email until a correct email is given
+        while (true) {
+            System.out.print("\nPlease enter the customer's email address: ");
+            String email = scanner.nextLine();
 
-                String orderNumber = lineParts[0]; // Extracts order number
-                String customerEmail = lineParts[1]; // Extracts customer email
-                String driverName = lineParts[2]; // Extracts driver name
-                String restaurant = lineParts[3]; // Extracts restaurant name
-                String city = lineParts[4]; // Extracts city
-                String request = lineParts[5]; // Extracts customer special request
+            // Condition that checks if the email is in a valid format
+            if (isValidEmailAddress(email)) {
 
-                // Extracts the array list of items of the order
-                String itemsLine = lineParts[6];
-                String trim = itemsLine.replace("[", "").replace("]", "");
-                String[] itemsArray = trim.split(", ");
+                // Condition that checks if the email exists in the database
+                if (getCustomerByEmail(connection, email) != null) {
+                    Customer customer = getCustomerByEmail(connection, email);
+                    int id = customer.getId();
 
-                // Creates a new order object with all extracted information
-                Order order = new Order(orderNumber, customerEmail, restaurant, city);
-                order.setDriver(driverName);
-                order.setSpecialRequest(request);
+                    // Loop that continuously asks for a new number until a correct one is given
+                    while (edit) {
+                        System.out.print("\nPlease enter the new contact number: ");
+                        String newNumber = scanner.nextLine();
 
-                // Loops through order list and extracts item name, price and quantity to add a new item object for the order
-                for (int i = 0; i < itemsArray.length; i += 3) {
-                    String itemName = itemsArray[i];
-                    double itemPrice = Double.parseDouble(itemsArray[i + 1]);
-                    int itemQuantity = Integer.parseInt(itemsArray[i + 2]);
-                    order.addOrderItem(new Item(itemName, itemPrice, itemQuantity));
+                        // Condition that checks if the number is in a valid format
+                        if (checkNumbersOnly(newNumber)) {
+                            // Creates a PreparedStatement to edit the specified number
+                            PreparedStatement ps = connection.prepareStatement("UPDATE Customers SET number =? WHERE id =?");
+                            // Updates and executes the PreparedStatement parameters with the given variables from the user
+                            ps.setString(1, newNumber);
+                            ps.setInt(2, id);
+                            ps.executeUpdate();
+                            System.out.println("Record updated!");
+                            edit = false; // Exits the loop after a successful update
+                        } else {
+                            System.out.println("Please enter a valid number.");
+                        }
+                    }
+                    break;
+                } else {
+                    System.out.println("That email doesn't exist in the database.");
                 }
-                orderList.add(order); // Adds the complete Order object to the customer list
+            } else {
+                System.out.println("Please enter a valid email.");
             }
         }
-        // Condition that occurs if the file cannot be read
-        catch (Exception e) {
-            System.out.println("Order file - Error: " + e);
+    }
+
+    // Function used to edit a customer's address
+    public static void editCustomerAddress(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        boolean edit = true;
+
+        // Loop that continuously asks for a email until a correct email is given
+        while (true) {
+            System.out.print("\nPlease enter the customer's email address: ");
+            String email = scanner.nextLine();
+
+            // Condition that checks if the email is in a valid format
+            if (isValidEmailAddress(email)) {
+
+                // Condition that checks if the email exists in the database
+                if (getCustomerByEmail(connection, email) != null) {
+                    Customer customer = getCustomerByEmail(connection, email);
+                    int id = customer.getId();
+
+                    // Loop that continuously asks for a new address until a correct one is given
+                    while (edit) {
+                        System.out.print("\nPlease enter the new address (1234 Street name - District): ");
+                        String newAddress = scanner.nextLine();
+
+                        // Condition that checks if the address is in a valid format
+                        if (isValidAddress(newAddress)) {
+                            // Creates a PreparedStatement to edit the specified address
+                            PreparedStatement ps = connection.prepareStatement("UPDATE Customers SET address =? WHERE id =?");
+                            // Updates and executes the PreparedStatement parameters with the given variables from the user
+                            ps.setString(1, newAddress);
+                            ps.setInt(2, id);
+                            ps.executeUpdate();
+                            System.out.println("Record updated!");
+                            edit = false; // Exits the loop after a successful update
+                        } else {
+                            System.out.println("Please enter a valid address.");
+                        }
+                    }
+                    break;
+                } else {
+                    System.out.println("That email doesn't exist in the database.");
+                }
+            } else {
+                System.out.println("Please enter a valid email.");
+            }
+        }
+    }
+
+    // Function used to edit a customer's city
+    public static void editCustomerCity(Connection connection) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+        boolean edit = true;
+
+        // Loop that continuously asks for a email until a correct email is given
+        while (true) {
+            System.out.print("\nPlease enter the customer's email address: ");
+            String email = scanner.nextLine();
+
+            // Condition that checks if the email is in a valid format
+            if (isValidEmailAddress(email)) {
+
+                // Condition that checks if the email exists in the database
+                if (getCustomerByEmail(connection, email) != null) {
+                    Customer customer = getCustomerByEmail(connection, email);
+                    int id = customer.getId();
+
+                    // Loop that continuously asks for a new city until a correct one is given
+                    while (edit) {
+                        System.out.print("\nPlease enter the new city: ");
+                        String newCity = scanner.nextLine();
+
+                        // Condition that checks if the city is in a valid format
+                        if (!newCity.equals("")) {
+                            // Creates a PreparedStatement to edit the specified city
+                            PreparedStatement ps = connection.prepareStatement("UPDATE Customers SET city =? WHERE id =?");
+                            // Updates and executes the PreparedStatement parameters with the given variables from the user
+                            ps.setString(1, newCity);
+                            ps.setInt(2, id);
+                            ps.executeUpdate();
+                            System.out.println("Record updated!");
+                            edit = false; // Exits the loop after a successful update
+                        } else {
+                            System.out.println("Please enter a valid city.");
+                        }
+                    }
+                    break;
+                } else {
+                    System.out.println("That email doesn't exist in the database.");
+                }
+            } else {
+                System.out.println("Please enter a valid email.");
+            }
         }
     }
 
     // Function used to write to the invoice file
-    public static void writeToInvoiceFile(Order order) {
+    public static void writeToInvoiceFile(Connection connection, int orderNumber) throws SQLException {
+        // DecimalFormat object used to define the price's format of printing
+        DecimalFormat df = new DecimalFormat("####0.00");
 
-        DecimalFormat df = new DecimalFormat("####0.00"); // DecimalFormat object used to define the price's format of printing
         // Variable initialization to be used in the invoice printing
         String invoice;
-        String orderNumber = order.getOrderNumber();
-        String email = order.getCustomerEmail();
-        Customer customer = getCustomer(email);
-        String name = customer.getName();
-        String customerNumber = customer.getContactNumber();
-        String city = order.getCity();
-        String[] address = customer.getAddress().split(" - ");
-        String restaurant = order.getRestaurant();
-        ArrayList<Item> orderItems = order.getOrderItems();
-        String specialInstruction = order.getSpecialRequest();
-        String driver = order.getDriver();
-        String restaurantNumber = getRestaurant(restaurant).getBranches().get(city);
         double total = 0.0;
+        Order order = getOrderByOrderNumber(connection, orderNumber);
+        String specialInstruction = order.getSpecialRequest();
+
+        int customerID = order.getCustomerID();
+        Customer customer = getCustomerById(connection, customerID);
+        String firstname = customer.getFirstname();
+        String surname = customer.getSurname();
+        String email = customer.getEmail();
+        String customerNumber = customer.getContactNumber();
+        String[] address = customer.getAddress().split(" - ");
+        String city = customer.getCity();
+
+        int restaurantID = order.getRestaurantID();
+        Restaurant restaurant = getRestaurantById(connection, restaurantID);
+        String restaurantName = restaurant.getName();
+        String restaurantNumber = restaurant.getNumber();
+
+        int driverID = order.getDriverID();
+        FoodDriver driver = getDriverById(connection, driverID);
+        String driverName = driver.getFirstname() + " " + driver.getSurname();
+
+        ArrayList<Item> orderItems = getOrderItems(connection, order);
 
         // Condition that checks the if variable used is in a driver's vicinity - if it is, sets the invoice details, else sets an alternative invoice
-        if (checkCitySupport(order)) {
+        if (getRestaurantById(connection, restaurantID) != null) {
             invoice = "Order number: " + orderNumber +
-                    "\nCustomer: " + name +
+                    "\nCustomer: " + firstname + " " + surname +
                     "\nEmail: " + email +
                     "\nPhone number: " + customerNumber +
                     "\nLocation: " + city +
-                    "\n\nYou have ordered the following from " + restaurant + " in " + city + ":\n";
+                    "\n\nYou have ordered the following from " + restaurantName + " in " + city + ":\n";
 
             //Loops through the orderItems list to calculate the total of all the items added
             for (Item item : orderItems) {
@@ -861,10 +1093,13 @@ public class Main {
 
             invoice += "\n\nSpecial instructions: " + specialInstruction +
                     "\n\nTotal: R" + df.format(total) +
-                    "\n\n" + driver + " is nearest to the restaurant and so he/ she will be delivering your order to you at:" +
+                    "\n\n" + driverName + " is nearest to the restaurant and so he/ she will be delivering your order to you at:" +
                     "\n\n" + address[0] +
                     "\n" + address[1] +
                     "\n\nIf you need to contact the restaurant, their number is " + restaurantNumber + ".";
+
+            // Marks the order as finalised in the database after a successful invoice was written
+            markAsFinalised(connection, order);
         } else {
             invoice = "Sorry! Our drivers are too far away from you to be able to deliver to your location.";
         }
@@ -882,66 +1117,61 @@ public class Main {
         }
     }
 
-    // Functions to check inputs existence/ validity
-    // Function that checks if the customer email is already saved to the database
-    public static boolean checkCustomerExists(String email) {
+    // Function used to finalise an order after its invoice was created
+    public static void markAsFinalised(Connection connection, Order order) throws SQLException {
+        // Creates a PreparedStatement to change the order status to "finalised"
+        PreparedStatement ps = connection.prepareStatement("UPDATE Orders SET status = 'Finalised' WHERE order_number = ?;");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, order.getOrderNumber());
+        ps.executeUpdate();
+        System.out.println("Order finalised!");
+    }
 
-        // Loops through the customer list and searches if the given email exists
-        for (Customer customer : customerList) {
-            if (email.equals(customer.getEmail())) {
-                return true;
-            }
+    // Function used to print the specified restaurant's menu
+    public static void printMenu(Connection connection, String restaurant) throws SQLException {
+        DecimalFormat df = new DecimalFormat("####0.00"); // DecimalFormat object that defines the format of how the prices should be printed
+        System.out.println("\nMenu: ");
+
+        // Creates a PreparedStatement to find all the items on the restaurant menu
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Items WHERE restaurant = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setString(1, restaurant);
+        ResultSet result = ps.executeQuery();
+
+        // Condition that prints the items when found
+        while (result.next()) {
+            String itemName = result.getString("name");
+            double itemPrice = result.getDouble("price");
+            System.out.println(itemName + " : " + "R" + df.format(itemPrice));
+        }
+    }
+
+    // Function used to check if a new order number is already in the database
+    public static boolean checkOrderNumberDatabase(Connection connection, int orderNumber) throws SQLException {
+        // Creates a PreparedStatement to find a specific order via order number
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Orders WHERE order_number = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setInt(1, orderNumber);
+        ResultSet result = ps.executeQuery();
+
+        // Condition that checks if the specific record exists and returns accordingly
+        if (result.next()) {
+            return true;
         }
         return false;
     }
 
-    // Function used to check if the given item is on the specified restaurant menu
-    public static boolean itemIsOnMenu(String itemName, String restaurant) {
-        boolean onMenu = false;
-
-        // Loops through the restaurant list and searches for the given restaurant
-        for (Restaurant res : restaurantList) {
-
-            // Condition if the restaurant is on the list
-            if (res.getName().equals(restaurant)) {
-                ArrayList<Item> menu = res.getMenu();
-
-                // Loops through the menu of the given restaurant and searches for the item given
-                for (Item item : menu) {
-
-                    // Condition if item is on the menu
-                    if (item.getName().equals(itemName)) {
-                        onMenu = true;
-                        break;
-                    }
-                }
-            }
-        }
-        return onMenu;
-    }
-
-    // Function used to check if a new order number is already in the database
-    public static boolean checkOrderNumberDatabase(String orderNumber) {
-        // Loops through the order list and searches for the given order number
-        for (Order order : orderList) {
-
-            // Condition if the order number was found on the list
-            if (orderNumber.equals(order.getOrderNumber())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     // Function used to check if a restaurant is on the database
-    public static boolean checkRestaurantDatabase(String restaurantName) {
-        // Loops through the restaurant list and searches for the given restaurant
-        for (Restaurant restaurant : restaurantList) {
+    public static boolean checkRestaurantDatabase(Connection connection, String restaurantName) throws SQLException {
+        // Creates a PreparedStatement to find a specific restaurant via name
+        PreparedStatement ps = connection.prepareStatement("SELECT * FROM Restaurants WHERE name = ?");
+        // Updates and executes the PreparedStatement parameters with the given variables from the user
+        ps.setString(1, restaurantName);
+        ResultSet result = ps.executeQuery();
 
-            // Condition if the restaurant is found on the list
-            if (restaurantName.equals(restaurant.getName())) {
-                return true;
-            }
+        // Condition that checks if the specific record exists and returns accordingly
+        if (result.next()) {
+            return true;
         }
         return false;
     }
@@ -969,23 +1199,6 @@ public class Main {
         return longCheck || doubleCheck;
     }
 
-    // Function used to check if the city can be delivered to
-    public static boolean checkCitySupport(Order order) {
-        String city = order.getCity();
-        boolean citySupported = false;
-
-        // Loop that searches through the driver's cities in the driver list
-        for (FoodDriver driver : driverList) {
-
-            // Condition if a driver's city matches the order's city
-            if (city.equals(driver.getCity())) {
-                citySupported = true;
-                break;
-            }
-        }
-        return citySupported;
-    }
-
     // Function used to check the validity of an email address by calling the Pattern specified below
     // Uses a Matcher object that matches the input email with the called pattern and returns the result
     public static boolean isValidEmailAddress(String emailStr) {
@@ -1006,7 +1219,7 @@ public class Main {
 
     // Pattern used by the above function that compares the address with a specific regex
     public static final Pattern VALID_ADDRESS_REGEX =
-            Pattern.compile("[0-9][0-9]?[0-9]?[0-9]?[0-9]? [A-Za-z]+ ?[A-Za-z]+? - [A-Za-z]+ ?[A-Za-z]+?");
+            Pattern.compile("[0-9][0-9]?[0-9]?[0-9]?[0-9]? [A-Za-z]+ ?[A-Za-z]+? ?[A-Za-z]+? - [A-Za-z]+ ?[A-Za-z]+?");
 }
 
 // Sources

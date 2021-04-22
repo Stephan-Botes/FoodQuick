@@ -1,22 +1,20 @@
-Order number: 4206988
-Customer: Pieter Jabzter
-Email: pietiejabz@heehee.co.za
-Phone number: 0897655987
-Location: Cape Town
+Order number: 24562415
+Customer: Cyril Pascoe
+Email: cyril@pascoe.net
+Phone number: 0753986687
+Location: Springbok
 
-You have ordered the following from Steers in Cape Town:
+You have ordered the following from KFC in Springbok:
 
-2 x Prince Burger (R79.99)
-1 x Sprite (R20.50)
-2 x Fries (R19.95)
+2 x 8 Piece Family Meal (R199.99)
 
-Special instructions: Make the fries as crusty as possible!
+Special instructions: Steal an extra chicken wing please.
 
-Total: R220.38
+Total: R399.98
 
-Miranda Metcalfe is nearest to the restaurant and so he/ she will be delivering your order to you at:
+Johan Hoffman is nearest to the restaurant and so he/ she will be delivering your order to you at:
 
-69 Where am I street
-Revonia
+53 Deserted lane
+Sandstorm
 
-If you need to contact the restaurant, their number is 0218493145.
+If you need to contact the restaurant, their number is 0279765184.
