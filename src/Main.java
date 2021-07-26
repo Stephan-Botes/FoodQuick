@@ -1,4 +1,3 @@
-import java.io.File;
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -367,7 +366,7 @@ Main {
 
                     // Condition that checks if the order is incomplete
                     if(order.getStatus().equals("Incomplete")) {
-                        writeToInvoiceFile(connection, iOrderNumber); // Writes a new invoice file after finding an incompleted order
+                        writeToInvoiceFile(connection, iOrderNumber); // Writes a new invoice file after finding an incomplete order
                         break;
                     } else {
                         System.out.println("That order is already completed.");

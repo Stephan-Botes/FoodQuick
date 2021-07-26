@@ -1,0 +1,22 @@
+.mtj.tmp/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+
+# production
+out/
+
+# misc
+project screenshots/
+queries/
+uml/
+.eslintcache
+.DS_Store
+.idea
+.idea_modules
+*.iml
+*.ipr
+*.iws
